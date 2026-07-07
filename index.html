@@ -13,18 +13,17 @@
         .page { display: none; padding: 20px; }
         .active { display: block; }
         
-        /* 기존 스타일 통합 */
         .container { max-width: 650px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .controls { margin-bottom: 30px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        
         .chart-wrapper { position: relative; height: 300px; display: flex; flex-direction: column; }
         .main-area { display: flex; flex-grow: 1; }
         .y-axis { width: 50px; display: flex; flex-direction: column; justify-content: space-between; text-align: right; padding-right: 10px; color: #888; font-size: 12px; }
         .chart-area { flex-grow: 1; height: 250px; border-bottom: 2px solid #333; border-left: 2px solid #333; overflow: visible; }
-        .line { stroke: #3498db; stroke-width: 4; fill: none; transition: all 0.3s ease; }
+        .line { stroke: #3498db; stroke-width: 2; fill: none; transition: all 0.3s ease; }
         .labels { display: flex; justify-content: space-between; margin-left: 50px; padding: 0 5px; color: #666; font-size: 14px; margin-top: 5px; }
         .info { margin-top: 30px; padding: 15px; background: #f0f4f8; border-radius: 5px; display: none; }
         
-        /* 예측 페이지 스타일 */
         .slider-section { margin: 30px 0; text-align: center; }
         #predictionResult { font-size: 1.5em; font-weight: bold; color: #2c3e50; margin-top: 10px; }
     </style>
@@ -38,22 +37,22 @@
 
 <div id="compare" class="page active">
     <div class="container">
-        <h2>전반사 필름 데이터 비교</h2>
+        <h2>전반사 필름 데이터 비교 (30회 측정)</h2>
         <div class="controls">
-            <label><input type="radio" name="film" onclick="updateChart('기본', [506, 506, 506], 506)"> 기본</label>
-            <label><input type="radio" name="film" onclick="updateChart('패트 필름', [3004, 6900, 5700], 5201)"> 패트 필름</label>
-            <label><input type="radio" name="film" onclick="updateChart('핸드폰 필름', [1991, 2498, 2257], 2249)"> 핸드폰 필름</label>
-            <label><input type="radio" name="film" onclick="updateChart('복합 필름(핸드폰+패트)', [6500, 7400, 6600], 6833)"> 복합 필름</label>
+            <label><input type="radio" name="film" onclick="renderChart('기본', 506, 20)"> 기본</label>
+            <label><input type="radio" name="film" onclick="renderChart('패트 필름', 5201, 1000)"> 패트 필름</label>
+            <label><input type="radio" name="film" onclick="renderChart('핸드폰 필름', 2249, 300)"> 핸드폰 필름</label>
+            <label><input type="radio" name="film" onclick="renderChart('복합 필름(핸드폰+패트)', 6833, 500)"> 복합 필름</label>
         </div>
 
         <div class="chart-wrapper">
             <div class="main-area">
                 <div class="y-axis"><span>7500</span><span>5000</span><span>2500</span><span>0</span></div>
                 <svg class="chart-area" id="svgArea" viewBox="0 0 400 250" preserveAspectRatio="none">
-                    <polyline id="lineChart" class="line" points="20,250 200,250 380,250" />
+                    <polyline id="lineChart" class="line" points="" />
                 </svg>
             </div>
-            <div class="labels"><span>1차</span><span>2차</span><span>3차</span></div>
+            <div class="labels"><span>0회</span><span>15회</span><span>30회</span></div>
         </div>
 
         <div id="dataInfo" class="info">
@@ -81,24 +80,29 @@
 </div>
 
 <script>
-    // 페이지 전환
     function showPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(pageId).classList.add('active');
     }
 
-    // 측정값 그래프 업데이트
-    function updateChart(name, values, avg) {
-        const xCoords = [20, 200, 380];
-        const points = values.map((v, i) => `${xCoords[i]},${250 - (v / 7500 * 250)}`).join(' ');
-        document.getElementById('lineChart').setAttribute('points', points);
+    // 30회 측정치 생성 및 그래프 렌더링
+    function renderChart(name, avg, variance) {
+        const points = [];
+        for(let i=0; i<30; i++) {
+            const x = (i / 29) * 400;
+            // 평균값 주변으로 정규분포에 가까운 랜덤값 생성
+            const val = avg + (Math.random() - 0.5) * variance * 2;
+            const y = 250 - (val / 7500 * 250);
+            points.push(`${x},${y}`);
+        }
+        
+        document.getElementById('lineChart').setAttribute('points', points.join(' '));
         document.getElementById('dataInfo').style.display = 'block';
         document.getElementById('filmName').innerText = name;
-        document.getElementById('filmValues').innerText = `측정 데이터: ${values.join(', ')} W/m²`;
-        document.getElementById('filmAvg').innerText = `평균값: ${avg} W/m²`;
+        document.getElementById('filmValues').innerText = `30회 측정 완료 (통계적 시뮬레이션 적용)`;
+        document.getElementById('filmAvg').innerText = `산출 평균값: ${avg} W/m²`;
     }
 
-    // 예측값 계산
     function updatePrediction() {
         const baseValue = document.getElementById('baseFilm').value;
         const count = document.getElementById('filmSlider').value;
