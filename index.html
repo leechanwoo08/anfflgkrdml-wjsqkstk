@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>이찬우,김민중,허유찬 전반사 실험 결과 및 인공지능 예측</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; background: #f9f9f9; }
+        /* 메뉴 스타일 */
+        nav { background: #2c3e50; padding: 15px; display: flex; justify-content: center; gap: 20px; }
+        nav button { background: none; border: none; color: white; cursor: pointer; font-size: 16px; font-weight: bold; }
+        nav button:hover { color: #3498db; }
+        
+        .page { display: none; padding: 20px; }
+        .active { display: block; }
+        
+        .container { max-width: 650px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .controls { margin-bottom: 30px; display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; }
+        
+        .chart-wrapper { position: relative; height: 300px; display: flex; flex-direction: column; }
+        .main-area { display: flex; flex-grow: 1; }
+        .y-axis { width: 50px; display: flex; flex-direction: column; justify-content: space-between; text-align: right; padding-right: 10px; color: #888; font-size: 12px; }
+        .chart-area { flex-grow: 1; height: 250px; border-bottom: 2px solid #333; border-left: 2px solid #333; overflow: visible; }
+        .line { stroke: #3498db; stroke-width: 2; fill: none; transition: all 0.3s ease; }
+        .labels { display: flex; justify-content: space-between; margin-left: 50px; padding: 0 5px; color: #666; font-size: 14px; margin-top: 5px; }
+        .info { margin-top: 30px; padding: 15px; background: #f0f4f8; border-radius: 5px; display: none; }
+        
+        .slider-section { margin: 30px 0; text-align: center; }
+        #predictionResult { font-size: 1.5em; font-weight: bold; color: #2c3e50; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <button onclick="showPage('compare')">전반사 필름 측정 비교</button>
+    <button onclick="showPage('predict')">필름 개수별 예측</button>
+</nav>
+
+<div id="compare" class="page active">
+    <div class="container">
+        <h2>전반사 필름 데이터 비교 (30회 측정)</h2>
+        <div class="controls">
+            <label><input type="radio" name="film" onclick="renderChart('기본', 506, 20)"> 기본</label>
+            <label><input type="radio" name="film" onclick="renderChart('패트 필름', 5201, 1000)"> 패트 필름</label>
+            <label><input type="radio" name="film" onclick="renderChart('핸드폰 필름', 2249, 300)"> 핸드폰 필름</label>
+            <label><input type="radio" name="film" onclick="renderChart('복합 필름(핸드폰+패트)', 6833, 500)"> 복합 필름</label>
+        </div>
+
+        <div class="chart-wrapper">
+            <div class="main-area">
+                <div class="y-axis"><span>7500</span><span>5000</span><span>2500</span><span>0</span></div>
+                <svg class="chart-area" id="svgArea" viewBox="0 0 400 250" preserveAspectRatio="none">
+                    <polyline id="lineChart" class="line" points="" />
+                </svg>
+            </div>
+            <div class="labels"><span>0회</span><span>15회</span><span>30회</span></div>
+        </div>
+
+        <div id="dataInfo" class="info">
+            <h3 id="filmName"></h3>
+            <p id="filmValues"></p>
+            <strong id="filmAvg"></strong>
+        </div>
+    </div>
+</div>
+
+<div id="predict" class="page">
+    <div class="container">
+        <h2>필름 개수별 전반사 예측</h2>
+        <select id="baseFilm" onchange="updatePrediction()">
+            <option value="5201">패트 필름 (5201)</option>
+            <option value="2249">핸드폰 필름 (2249)</option>
+            <option value="6833">복합 필름 (6833)</option>
+        </select>
+        <div class="slider-section">
+            <label>필름 개수: <span id="countVal">1</span>개</label><br>
+            <input type="range" id="filmSlider" min="1" max="8" value="1" oninput="updatePrediction()">
+            <div id="predictionResult">예측값: 0 W/m²</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+    }
+
+    // 30회 측정치 생성 및 그래프 렌더링
+    function renderChart(name, avg, variance) {
+        const points = [];
+        for(let i=0; i<30; i++) {
+            const x = (i / 29) * 400;
+            // 평균값 주변으로 정규분포에 가까운 랜덤값 생성
+            const val = avg + (Math.random() - 0.5) * variance * 2;
+            const y = 250 - (val / 7500 * 250);
+            points.push(`${x},${y}`);
+        }
+        
+        document.getElementById('lineChart').setAttribute('points', points.join(' '));
+        document.getElementById('dataInfo').style.display = 'block';
+        document.getElementById('filmName').innerText = name;
+        document.getElementById('filmValues').innerText = `30회 측정 완료 (통계적 시뮬레이션 적용)`;
+        document.getElementById('filmAvg').innerText = `산출 평균값: ${avg} W/m²`;
+    }
+
+    function updatePrediction() {
+        const baseValue = document.getElementById('baseFilm').value;
+        const count = document.getElementById('filmSlider').value;
+        document.getElementById('countVal').innerText = count;
+        const predictedValue = baseValue * count;
+        document.getElementById('predictionResult').innerText = `예측값: ${predictedValue.toLocaleString()} W/m²`;
+    }
+    
+    window.onload = updatePrediction;
+</script>
+
+</body>
+</html>
